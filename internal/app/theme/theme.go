@@ -156,6 +156,67 @@ func PrimaryButton(c *ui.Context, label string) ui.Element {
 // capsule is a radius past half of any control's height.
 const capsule = 100
 
+// Table builds a table as Finder's list view shows one: 24 DIP rows under an
+// 11 DIP header. The cells set their own text sizes.
+func Table(c *ui.Context, build func()) ui.Element {
+	t := *c.Theme()
+	t.Spacing, t.FontSize = 3, 11
+	return ui.Themed(c, &t).Background(ui.Transparent).Grow(1).MinHeight(0).AlignItems(ui.Stretch).Children(build)
+}
+
+// Stripe tints every other row of a table, as Finder's list view does.
+func Stripe(t *ui.Theme) ui.Color { return ink(t, 0.04, 0.05) }
+
+// Rows tints every other row of a table built in Table, and the room under
+// its last row, as Finder's list view: MyGo's table has no such option, so each
+// cell paints its part of its row's stripe. Make one a frame.
+type Rows struct {
+	n     int
+	table ui.Element
+	last  ui.Rect
+	seen  bool
+}
+
+// NewRows returns the stripes of a table of n rows.
+func NewRows(n int) *Rows { return &Rows{n: n} }
+
+// Cell builds a cell's content over its row's stripe; a chosen row is plain, its highlight showing.
+func (r *Rows) Cell(c *ui.Context, row int, chosen bool, content func()) {
+	t := c.Theme()
+	// The cell's own padding above and under its content, which the stripe covers too.
+	pad := t.Space(1.5)
+	ui.Row(c).Grow(1).MinWidth(0).AlignSelf(ui.Stretch).AlignItems(ui.Center).Draw(func(p *ui.Painter, box ui.Rect) {
+		table := r.table.Bounds()
+		stripe := ui.Rect{X: table.X, Y: box.Y - pad, W: table.W, H: box.H + 2*pad}
+		if row == r.n-1 {
+			r.last, r.seen = stripe, true
+		}
+		// Spanning the table and cut to the cell, the cells' parts make one stripe with round ends.
+		if row%2 == 1 && !chosen {
+			p.Fill(stripe, Stripe(t), stripeRadius)
+		}
+	}).Children(content)
+}
+
+// Under continues the stripes under the last row of table, which Cell's cells belong to.
+func (r *Rows) Under(table ui.Element) {
+	r.table = table
+	table.DrawOver(func(p *ui.Painter, box ui.Rect) {
+		if !r.seen || r.last.H <= 0 {
+			return
+		}
+		t := p.Theme()
+		bottom := box.Y + box.H
+		for row, y := r.n, r.last.Y+r.last.H; y < bottom; row, y = row+1, y+r.last.H {
+			if row%2 == 1 {
+				p.Fill(ui.Rect{X: box.X, Y: y, W: box.W, H: min(r.last.H, bottom-y)}, Stripe(t), stripeRadius)
+			}
+		}
+	})
+}
+
+const stripeRadius = 5
+
 // Tabular sets digits in equal widths, for counts and dates that change or line up.
 func Tabular(e ui.Element) ui.Element { return e.FontFeatures("tnum") }
 

@@ -21,7 +21,6 @@ const (
 	colKind    = "kind"
 	colTags    = "tags"
 	colKey     = "key"
-	colCite    = "cite"
 )
 
 const (
@@ -39,8 +38,6 @@ var columns = []ui.TableColumn{
 	{Title: "Tags", ID: colTags, Width: 110, MinWidth: minColumnW, MaxWidth: maxColumnW, Sortable: true},
 	{Title: "Key", ID: colKey, Width: 130, MinWidth: minColumnW, MaxWidth: maxColumnW, Sortable: true},
 }
-
-var citeColumn = ui.TableColumn{ID: colCite, Width: 64, Fixed: true}
 
 // savedWidths are the saved column widths by ID. Older preferences name a column by its title.
 func savedWidths(saved map[string]float32) map[string]float32 {
@@ -207,15 +204,8 @@ func (s *State) chip(c *ui.Context, filter, label string, count int) {
 	}
 }
 
-func (s *State) columns() []ui.TableColumn {
-	if !s.canCite() {
-		return columns
-	}
-	return append(append([]ui.TableColumn(nil), columns...), citeColumn)
-}
-
 func (s *State) table(c *ui.Context, rows []library.Row) {
-	cols := s.columns()
+	cols := columns
 	var after func()
 	s.list.Key = func(i int) any { return rows[i].Key }
 	s.list.Label = func(i int) string { return rows[i].Label() }
@@ -237,9 +227,16 @@ func (s *State) table(c *ui.Context, rows []library.Row) {
 	// As on macOS: the accent while the table has the keyboard.
 	active := s.list.FocusWithin(c)
 	s.tagEditor.anchored = false
-	table := ui.Table(c.Key("library-table"), &s.list, cols, len(rows), func(row, col int) {
-		s.cell(c, rows[row], cols[col].ID, active && s.chosen.Has(rows[row].Key))
-	}).Grow(1).MarginX(theme.TableInset).Label("Library")
+	s.list.RoundRows = true
+	var table ui.Element
+	stripes := theme.NewRows(len(rows))
+	theme.Table(c, func() {
+		table = ui.Table(c.Key("library-table"), &s.list, cols, len(rows), func(row, col int) {
+			chosen := s.chosen.Has(rows[row].Key)
+			stripes.Cell(c, row, chosen, func() { s.cell(c, rows[row], cols[col].ID, active && chosen) })
+		}).Grow(1).MarginX(theme.TableInset).Label("Library")
+		stripes.Under(table)
+	})
 	if table.Submitted() {
 		if keys := s.selectedIn(rows); len(keys) == 1 {
 			s.OpenEntry(keys[0])
@@ -271,10 +268,6 @@ func (s *State) cell(c *ui.Context, row library.Row, col string, accent bool) {
 		})
 	case colKey:
 		ui.Text(c, row.Key).Font(theme.Mono).FontSize(12).TextColor(muted).SingleLine()
-	case colCite:
-		if theme.Button(c, "Cite").FontSize(12).Height(22).Padding(0, 10).Clicked() {
-			s.h.InsertCitation(row.Key)
-		}
 	default:
 		el := ui.Text(c, cell(row, col)).FontSize(13).TextColor(muted).SingleLine()
 		if col == colYear {

@@ -148,24 +148,32 @@ func (s *State) sourcesTable(c *ui.Context, papers []paper) {
 			s.deletePaper(p)
 		}
 	}
-	table := ui.Table(c, &s.sources, cols, len(papers), func(row, col int) {
-		p := papers[row]
-		muted := theme.Caption(t)
-		switch col {
-		case 0:
-			ui.Text(c, p.title).FontSize(13).SingleLine()
-		case 1:
-			ui.Text(c, p.row.Authors).FontSize(13).SingleLine().TextColor(muted)
-		case 2:
-			theme.Tabular(ui.Text(c, p.row.Year).FontSize(13).SingleLine().TextColor(muted))
-		case 3:
-			if p.linked {
-				ui.Text(c, p.row.Key).SingleLine().Font(theme.Mono).FontSize(12).TextColor(muted)
-			} else if theme.Button(c, "Link to Source…").FontSize(12).Clicked() {
-				s.linkToSource(p.id)
-			}
-		}
-	}).Grow(1).MarginX(theme.TableInset).Label("Sources")
+	s.sources.RoundRows = true
+	var table ui.Element
+	stripes := theme.NewRows(len(papers))
+	theme.Table(c, func() {
+		table = ui.Table(c, &s.sources, cols, len(papers), func(row, col int) {
+			stripes.Cell(c, row, row == s.chosen, func() {
+				p := papers[row]
+				muted := theme.Caption(t)
+				switch col {
+				case 0:
+					ui.Text(c, p.title).FontSize(13).SingleLine()
+				case 1:
+					ui.Text(c, p.row.Authors).FontSize(13).SingleLine().TextColor(muted)
+				case 2:
+					theme.Tabular(ui.Text(c, p.row.Year).FontSize(13).SingleLine().TextColor(muted))
+				case 3:
+					if p.linked {
+						ui.Text(c, p.row.Key).SingleLine().Font(theme.Mono).FontSize(12).TextColor(muted)
+					} else if theme.Button(c, "Link to Source…").FontSize(12).Height(20).Margin(-3, 0).Padding(0, 10).Clicked() {
+						s.linkToSource(p.id)
+					}
+				}
+			})
+		}).Grow(1).MarginX(theme.TableInset).Label("Sources")
+		stripes.Under(table)
+	})
 	if (table.Changed() || table.Submitted()) && s.chosen >= 0 {
 		s.h.Open(papers[s.chosen].id)
 	}

@@ -138,7 +138,7 @@ func (s *State) tagEditorView(c *ui.Context, anchor ui.Element, over bool) {
 			panel.AttachTo(anchor, ui.AnchorCenter, ui.AnchorCenter)
 		}
 		keys := ed.keys
-		field := ui.TextInput(c.Key("tag-editor-field"), &ed.text).Placeholder("Add a tag").Label("Add a tag").AutoFocus().Margin(0, 2, 4, 2)
+		field := ui.TextInput(c.Key("tag-editor-field"), &ed.text).Placeholder("Add a tag").Label("Add a tag").AutoFocus().FontSize(13).Margin(0, 2, 4, 2)
 		if field.Submitted() && strings.TrimSpace(ed.text) != "" {
 			tag := ed.text
 			after = func() {
