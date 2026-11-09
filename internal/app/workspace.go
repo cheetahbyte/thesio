@@ -27,9 +27,11 @@ var _ host.Host = (*Workspace)(nil)
 
 // Workspace is the state of one window.
 type Workspace struct {
-	win   *mygo.Window
-	store *vault.Store
-	prefs *host.Preferences
+	closed       bool
+	stopWatching func()
+	win          *mygo.Window
+	store        *vault.Store
+	prefs        *host.Preferences
 
 	// entries are most recently modified first; index finds them by id.
 	entries []vault.Entry
@@ -80,6 +82,9 @@ func New(win *mygo.Window, store *vault.Store, warnings []string) *Workspace {
 	ws.cites.OpenHistory = ws.openLibraryHistory
 	ws.papers = papers.New(ws)
 	ws.Warn(warnings)
+	if win != nil {
+		ws.watchFiles()
+	}
 	return ws
 }
 

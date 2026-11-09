@@ -372,16 +372,20 @@ func (s *Store) entry(item Item) Entry {
 	}
 	e.Typst, e.Title = true, DocumentTitle(item.Name)
 	size := item.Info.Size()
-	if cached, ok := s.bodies[item.ID]; ok && cached.modified == e.Modified && cached.size == size {
+	if cached, ok := s.bodies[item.ID]; ok && cached.modified == item.Info.ModTime().UnixNano() && cached.size == size {
 		e.Body = cached.text
 		return e
 	}
 	if data, err := os.ReadFile(item.Path); err == nil && utf8.Valid(data) {
 		e.Body = string(data)
 	}
-	s.bodies[item.ID] = cachedBody{modified: e.Modified, size: size, text: e.Body}
+	s.bodies[item.ID] = cachedBody{modified: item.Info.ModTime().UnixNano(), size: size, text: e.Body}
 	return e
 }
+
+// InvalidateBodies drops search and snippet text after filesystem notifications,
+// including writes that preserve a file's size and timestamp.
+func (s *Store) InvalidateBodies() { clear(s.bodies) }
 
 // Load is the text of document id.
 func (s *Store) Load(id string) (string, error) {
