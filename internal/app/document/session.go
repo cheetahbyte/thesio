@@ -2,7 +2,6 @@ package document
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -14,17 +13,11 @@ import (
 	"github.com/egoist/mygo/ui/editor"
 )
 
-const (
-	debounce = 120 * time.Millisecond
-	// ownScale is pixels per point for the open file's pages: sharp on a 2x
-	// screen at full page width. Pages of other files only need to read as pages.
-	ownScale   = 2.0
-	otherScale = 0.5
-)
+const debounce = 120 * time.Millisecond
 
 // page is a page of the document, ready to draw.
 type page struct {
-	key           string
+	hash, key     string
 	bitmap        *ui.Bitmap
 	width, height float32
 	own           bool
@@ -47,6 +40,10 @@ type session struct {
 	took             time.Duration
 	compiled         bool
 	published        int
+	// Raster work is independent of compilation: resizing never recompiles.
+	rasterLatest    atomic.Uint64
+	rasterPlan      string
+	rasterPublished uint64
 	// downloading are packages being fetched; tried those fetched since the last edit.
 	downloading map[string]bool
 	tried       map[string]bool
@@ -67,6 +64,7 @@ func (s *session) knowledge() *typst.Compilation {
 
 func (s *session) close() {
 	s.latest.Add(1)
+	s.rasterLatest.Add(1)
 	go s.compiler.Close()
 }
 
@@ -75,9 +73,9 @@ func (d *Open) compile(wait bool) {
 	s := d.s
 	gen := s.latest.Add(1)
 	path, main, text := d.id, d.main, d.Text()
-	known := map[string]*ui.Bitmap{}
+	known := make(map[string]page, len(s.pages))
 	for _, p := range s.pages {
-		known[p.key] = p.bitmap
+		known[p.hash] = p
 	}
 	go func() {
 		if wait {
@@ -99,7 +97,7 @@ func (d *Open) compile(wait bool) {
 		}
 		var pages []page
 		if err == nil && s.render && k.OK {
-			pages = renderPages(k, path, known)
+			pages = compiledPageInfo(k, path, known)
 		}
 		took := time.Since(started)
 		s.h.Update(func() {
@@ -110,28 +108,15 @@ func (d *Open) compile(wait bool) {
 	}()
 }
 
-// renderPages renders the pages whose content changed, and takes the others
-// from known.
-func renderPages(k *typst.Compilation, path string, known map[string]*ui.Bitmap) []page {
+// compiledPageInfo preserves page geometry even before its bitmap is ready.
+// Ownership affects caret following, not the resolution of readable pages.
+func compiledPageInfo(k *typst.Compilation, path string, known map[string]page) []page {
 	own := k.PagesFrom(path)
 	pages := make([]page, 0, len(k.Pages))
 	for i, info := range k.Pages {
-		mine := i >= len(own) || own[i]
-		scale := float32(otherScale)
-		if mine {
-			scale = ownScale
-		}
-		key := fmt.Sprintf("%s@%g", info.Hash, scale)
-		bitmap := known[key]
-		if bitmap == nil {
-			img, err := k.Render(i, scale)
-			if err != nil {
-				continue
-			}
-			bitmap = ui.NewBitmap(img)
-			known[key] = bitmap
-		}
-		pages = append(pages, page{key: key, bitmap: bitmap, width: info.Width, height: info.Height, own: mine})
+		previous := known[info.Hash]
+		pages = append(pages, page{hash: info.Hash, key: previous.key, bitmap: previous.bitmap,
+			width: info.Width, height: info.Height, own: i >= len(own) || own[i]})
 	}
 	return pages
 }
@@ -153,6 +138,8 @@ func (d *Open) publish(k *typst.Compilation, err error, pages []page, took time.
 		s.document = k
 		s.took, s.compiled = took, true
 		if s.render {
+			s.rasterLatest.Add(1)
+			s.rasterPlan = ""
 			s.pages = pages
 		}
 	}
