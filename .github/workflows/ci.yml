@@ -46,8 +46,8 @@ jobs:
             { go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest && go install golang.org/x/vuln/cmd/govulncheck@latest; }
           echo "$HOME/go/bin" >> "$GITHUB_PATH"
 
-      # The built library, keyed on the crate's sources: a Go-only change compiles no Rust,
-      # and the Rust tests run only when the library had to be built.
+      # The built library, keyed on the crate's sources (not typst/target, which rust-cache
+      # restores): a Go-only change compiles no Rust, and the Rust tests run only on a miss.
       - name: Host triple
         id: host
         run: |
@@ -57,13 +57,13 @@ jobs:
       - name: Target the oldest supported macOS
         run: echo "MACOSX_DEPLOYMENT_TARGET=$(jq -r .macos.minimumSystemVersion mygo.json)" >> "$GITHUB_ENV"
 
-      # The built library, keyed on the crate's sources; the release's macOS job restores it too.
+      # The release's macOS job restores it too, and needs the same hash of the same files.
       - name: Restore the Typst library
         id: typst-lib
         uses: actions/cache@v4
         with:
           path: typst/target/*/release/libthesio_typst.a
-          key: typst-lib-ci-${{ steps.host.outputs.triple }}-macos${{ env.MACOSX_DEPLOYMENT_TARGET }}-${{ hashFiles('typst/**') }}
+          key: typst-lib-ci-${{ steps.host.outputs.triple }}-macos${{ env.MACOSX_DEPLOYMENT_TARGET }}-${{ hashFiles('typst/Cargo.toml', 'typst/Cargo.lock', 'typst/rust-toolchain.toml', 'typst/src/**', 'typst/include/**') }}
 
       - name: Rust tests, clippy and the library build
         if: steps.typst-lib.outputs.cache-hit != 'true'

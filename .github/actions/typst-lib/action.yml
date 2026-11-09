@@ -1,0 +1,91 @@
+name: Typst library
+description: Restore libthesio_typst.a for a platform from the cache, or build it and, on main, cache it.
+inputs:
+  platform:
+    description: The mygo build platform, as in darwin/universal
+    required: true
+  triples:
+    description: The Rust target triples the platform links, separated by spaces
+    required: true
+runs:
+  using: composite
+  steps:
+    # Otherwise cargo, cc and cgo target the runner's macOS, and the app needs that version
+    # whatever Info.plist says (#9). The flag in CGO_CFLAGS keys Go's build cache on it.
+    - name: Target the oldest supported macOS
+      if: runner.os == 'macOS'
+      shell: bash
+      run: |
+        target=$(jq -r .macos.minimumSystemVersion mygo.json)
+        echo "MACOSX_DEPLOYMENT_TARGET=$target" >> "$GITHUB_ENV"
+        echo "CGO_CFLAGS=-O2 -g -mmacosx-version-min=$target" >> "$GITHUB_ENV"
+
+    # cgo and the Rust gnu target need MinGW: gcc for the C code of ring and psm and
+    # for cgo, dlltool for the windows crates' import libraries.
+    - uses: msys2/setup-msys2@v2
+      if: runner.os == 'Windows'
+      id: msys2
+      with:
+        msystem: MINGW64
+        install: mingw-w64-x86_64-gcc
+        path-type: inherit
+    - name: Put MinGW on the PATH
+      if: runner.os == 'Windows'
+      shell: bash
+      run: echo '${{ steps.msys2.outputs.msys2-location }}\mingw64\bin' >> "$GITHUB_PATH"
+
+    # Keyed on the crate's sources only: typst/target, which rust-cache restores, would
+    # change the hash. A tag's run cannot read another tag's caches, so only main saves,
+    # and a macOS build can start from the arm64 library CI built.
+    - name: Restore the Typst library
+      id: lib
+      uses: actions/cache/restore@v4
+      with:
+        path: typst/target/*/release/libthesio_typst.a
+        key: typst-lib-${{ inputs.platform }}-macos${{ env.MACOSX_DEPLOYMENT_TARGET }}-${{ hashFiles('typst/Cargo.toml', 'typst/Cargo.lock', 'typst/rust-toolchain.toml', 'typst/src/**', 'typst/include/**') }}
+        restore-keys: typst-lib-ci-aarch64-apple-darwin-macos${{ env.MACOSX_DEPLOYMENT_TARGET }}-${{ hashFiles('typst/Cargo.toml', 'typst/Cargo.lock', 'typst/rust-toolchain.toml', 'typst/src/**', 'typst/include/**') }}
+
+    # typst/rust-toolchain.toml pins the channel; scripts/build-typst.sh adds the targets.
+    - name: Install Rust
+      if: steps.lib.outputs.cache-hit != 'true'
+      shell: bash
+      working-directory: typst
+      run: |
+        command -v rustup > /dev/null || {
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain none
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.cargo/bin:$PATH"
+        }
+        rustup toolchain install
+
+    - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      if: steps.lib.outputs.cache-hit != 'true'
+      with:
+        workspaces: typst
+        key: ${{ inputs.platform }}
+        cache-on-failure: true
+        save-if: ${{ github.ref == 'refs/heads/main' }}
+
+    - name: Build the Typst library
+      if: steps.lib.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        THESIO_SKIP_BUILT: "1"
+      run: scripts/build-typst.sh ${{ inputs.triples }}
+
+    # internal/typst/cgo.go lists these system libraries per OS; compare when a link fails.
+    - name: Show the native libraries the Typst library needs
+      if: steps.lib.outputs.cache-hit != 'true'
+      shell: bash
+      working-directory: typst
+      run: |
+        for target in ${{ inputs.triples }}; do
+          cargo rustc --release --target "$target" --lib -- --print native-static-libs 2>&1 | grep native-static-libs
+        done
+
+    - name: Cache the Typst library
+      if: steps.lib.outputs.cache-hit != 'true' && github.ref == 'refs/heads/main'
+      uses: actions/cache/save@v4
+      with:
+        path: typst/target/*/release/libthesio_typst.a
+        key: ${{ steps.lib.outputs.cache-primary-key }}
