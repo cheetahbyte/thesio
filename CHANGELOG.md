@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.4
+
+- Keep document previews sharp at their displayed size and pixel density, including pages from other source files. Refresh raster resolution after resizing and retain only visible and nearby page bitmaps within a memory budget. PDF export is unchanged.
+
 ## 0.1.3
 
 - Update the app from inside it: Thesio checks for a new version at launch and once a day, shows its release notes, and downloads only what changed when it can. Check for Updates… in the Thesio menu checks at once. Apps installed as a Debian package are still updated by the package manager.
