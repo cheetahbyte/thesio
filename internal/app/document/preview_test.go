@@ -63,17 +63,21 @@ func assertPreviewPixels(t *testing.T, d *Open, density float32) {
 	}
 }
 
-func waitForUpdate(t *testing.T, h *fakeHost) {
+// takeUpdates holds completed callbacks apart from any later worker's updates.
+// Pumping the host after another frame could also publish that frame's valid raster.
+func takeUpdates(t *testing.T, h *fakeHost) []func() {
 	t.Helper()
 	for deadline := time.Now().Add(5 * time.Second); time.Now().Before(deadline); time.Sleep(time.Millisecond) {
 		h.mu.Lock()
-		queued := len(h.queue)
+		queue := h.queue
+		h.queue = nil
 		h.mu.Unlock()
-		if queued > 0 {
-			return
+		if len(queue) > 0 {
+			return queue
 		}
 	}
 	t.Fatal("raster worker did not queue an update")
+	return nil
 }
 
 func TestPreviewRejectsObsoleteRasterAndReusesUnchangedPage(t *testing.T) {
@@ -82,12 +86,19 @@ func TestPreviewRejectsObsoleteRasterAndReusesUnchangedPage(t *testing.T) {
 	original := d.s.pages[0].bitmap
 	tt.SetSize(800, 700)
 	tt.Frame()
-	waitForUpdate(t, h) // A completed, older-size render is waiting on the UI thread.
+	obsolete := takeUpdates(t, h) // Hold the completed, older-size render.
 	tt.SetSize(1300, 700)
 	tt.Frame()
-	h.pump()
+	// Force the newest render to be queued too, matching the failing schedule.
+	newest := takeUpdates(t, h)
+	for _, update := range obsolete {
+		update()
+	}
 	if d.s.pages[0].bitmap != original {
 		t.Fatal("obsolete low-resolution result replaced the current bitmap")
+	}
+	for _, update := range newest {
+		update()
 	}
 	until(t, h, tt, "newest raster", func() bool { return previewPixelsMatch(d, 1) })
 	first := d.s.pages[0].bitmap
@@ -103,9 +114,12 @@ func TestPreviewRejectsObsoleteRasterAndReusesUnchangedPage(t *testing.T) {
 	}
 	tt.SetScale(2)
 	tt.Frame()
-	waitForUpdate(t, h)
+	pending := takeUpdates(t, h)
 	d.Close()
-	h.pump() // A callback queued before closing must not publish into the closed editor.
+	for _, update := range pending { // A callback queued before closing must not publish.
+		update()
+	}
+	h.pump()
 	if d.s.pages[0].bitmap != first {
 		t.Fatal("closed editor accepted a queued raster")
 	}
