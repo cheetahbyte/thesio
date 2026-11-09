@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2
+
+- Pick up changes made to the vault outside the app: the file list, open editors and included-file previews follow files that are created, edited, moved or deleted elsewhere. An editor with unsaved changes keeps them when the file changes on disk, and autosave no longer overwrites an outside edit or brings back a deleted file.
+
 ## 0.1.1
 
 - Build the Linux apps on Ubuntu 22.04, so they run on glibc 2.35 and later and on any x86-64 CPU. The 0.1.0 builds needed glibc 2.43 and AVX2, and the loader refused them with "CPU ISA level is lower than required".
