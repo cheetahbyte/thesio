@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Follow macOS 26's look: page bars group their buttons on a capsule of glass, dialogs, the search panel and the tag popovers are round panels of glass over a lighter backdrop, push buttons are capsules, and the More, right-click and Type menus are the system's own instead of ones drawn in the window. Confirmations (delete, restore, a failed save) are the system's alert, a sheet on the window.
+
 ## 0.1.5
 
 - Run on macOS 13 and later. Release builds needed the macOS version of the machine they were built on (macOS 26 for 0.1.4), so Finder showed Thesio as an app that cannot be opened on macOS 15 and older (#9).

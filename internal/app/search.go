@@ -204,8 +204,8 @@ func (ws *Workspace) searchDialog(c *ui.Context) {
 	_, height := c.Size()
 	ws.search.selected = min(ws.search.selected, max(len(results)-1, 0))
 	ui.DialogBase(c, &ws.search.open, func(backdrop, panel ui.Element) {
-		backdrop.Background(ui.RGBA(0, 0, 0, 0.2))
-		theme.Elevate(panel.Width(540).Height(max(min(630, height-120), 200)).Radius(14).Background(t.Background).Clip(), t).Label("Search")
+		backdrop.Background(theme.Scrim)
+		theme.Panel(panel.Width(540).Height(max(min(630, height-120), 200)).Radius(theme.PanelRadius).Clip(), t).Label("Search")
 		ui.Row(c).Height(46).Padding(0, 8, 0, 12).AlignItems(ui.Center).Children(func() {
 			// The panel is the field, as Spotlight's: no box or ring of its own.
 			field := ui.SearchField(c, &ws.search.query).Placeholder("Search").AutoFocus().Grow(1).FontSize(15).
@@ -250,7 +250,7 @@ func (ws *Workspace) searchDialog(c *ui.Context) {
 
 func (ws *Workspace) searchRow(c *ui.Context, h hit, i int, q string) {
 	t := c.Theme()
-	row := ui.ButtonBase(c).Padding(8, 8, 8, 12).Gap(10).Radius(6).AlignItems(ui.Center)
+	row := ui.ButtonBase(c).Padding(8, 8, 8, 12).Gap(10).Radius(12).AlignItems(ui.Center)
 	if row.Hovered() && ws.search.selected != i {
 		ws.search.selected = i
 	}

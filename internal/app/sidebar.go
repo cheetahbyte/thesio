@@ -409,7 +409,7 @@ func (ws *Workspace) sidebarView(c *ui.Context) {
 		if _, ok := ui.DragOver[dragRow](list); ok {
 			list.Background(theme.Hover(t))
 		}
-		list.PopoverMenu(ws.filesMenu)
+		list.ContextMenu(ws.filesMenu)
 		list.Children(func() { ws.sidebarLists(c) })
 		ws.sidebarFooter(c)
 	})
@@ -516,7 +516,7 @@ func (ws *Workspace) sectionHeader(c *ui.Context, s section) {
 				}
 			}
 			theme.Tabular(ui.Text(c, fmt.Sprintf("Selected: %d", n)).FontSize(13).Grow(1))
-			if ui.Button(c, "Exit").Tooltip("Exit selection mode").FontSize(12).Clicked() {
+			if theme.Button(c, "Exit").Tooltip("Exit selection mode").FontSize(12).Clicked() {
 				ws.exitSelection()
 			}
 		})
@@ -562,7 +562,7 @@ func (ws *Workspace) docRow(c *ui.Context, e vault.Entry, depth int, files bool)
 		ws.toggleCheck(e.ID)
 	}
 	id := e.ID
-	row.PopoverMenu(func(m *ui.Menu) {
+	row.ContextMenu(func(m *ui.Menu) {
 		if files && ws.sidebar.selecting {
 			ws.batchMenu(m)
 		} else {

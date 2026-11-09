@@ -134,13 +134,15 @@ func (ws *Workspace) docView(c *ui.Context) {
 			}
 		})
 		ui.Spacer(c)
-		if ws.doc != nil {
-			iconButton(c, theme.Icons.Ellipsis, "More").PopoverMenuButton(ws.docMenu)
-		}
-		ws.searchButton(c)
-		if iconButton(c, theme.Icons.Plus, "New document").Clicked() {
-			ws.after(func() { ws.NewDocument("") })
-		}
+		theme.BarGroup(c, func() {
+			if ws.doc != nil {
+				theme.BarButton(c, theme.Icons.Ellipsis, "More").Menu(ws.docMenu)
+			}
+			ws.searchButton(c)
+			if theme.BarButton(c, theme.Icons.Plus, "New document").Clicked() {
+				ws.after(func() { ws.NewDocument("") })
+			}
+		})
 	})
 	if ws.doc != nil {
 		ui.Column(c).Grow(1).MinHeight(0).Children(func() { ws.doc.View(c) })

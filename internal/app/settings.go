@@ -167,7 +167,7 @@ func (ws *Workspace) documentsPage(c *ui.Context) {
 	}
 	group(c,
 		settingRow(c, "Vault folder", ws.vaultLocation(), func() {
-			if ui.Button(c, revealLabel()).Clicked() {
+			if theme.Button(c, revealLabel()).Clicked() {
 				ws.Reveal(ws.store.Root())
 			}
 		}),
@@ -183,7 +183,7 @@ func (ws *Workspace) documentsPage(c *ui.Context) {
 			}
 		}),
 		settingRow(c, "Trash", fmt.Sprintf("Deleted documents are kept for %d days.", vault.TrashDays), func() {
-			if ui.Button(c, "Open").Clicked() {
+			if theme.Button(c, "Open").Clicked() {
 				ws.after(func() { ws.ShowView(host.ViewTrash) })
 			}
 		}),

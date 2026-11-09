@@ -91,19 +91,21 @@ func (ws *Workspace) homeView(c *ui.Context) {
 	}
 	o := ws.home.overview
 	ws.pageHeader(c, "Home", func() {
-		ws.searchButton(c)
-		if iconButton(c, theme.Icons.Plus, "New document").Clicked() {
-			ws.after(func() { ws.NewDocument("") })
-		}
+		theme.BarGroup(c, func() {
+			ws.searchButton(c)
+			if theme.BarButton(c, theme.Icons.Plus, "New document").Clicked() {
+				ws.after(func() { ws.NewDocument("") })
+			}
+		})
 	})
 	anyDocument := slices.ContainsFunc(ws.entries, func(e vault.Entry) bool { return e.Typst })
 	if o.sources == 0 && !anyDocument {
 		emptyState(c, theme.Icons.Home, "Nothing here yet", "Start writing, or add the papers you are reading.", func() {
 			ui.Row(c).Gap(8).Margin(16, 0, 0, 0).Children(func() {
-				if ui.Button(c, "Add a Source").Clicked() {
+				if theme.Button(c, "Add a Source").Clicked() {
 					ws.after(func() { ws.ShowView(host.ViewSources) })
 				}
-				if ui.PrimaryButton(c, "New Document").Clicked() {
+				if theme.PrimaryButton(c, "New Document").Clicked() {
 					ws.after(func() { ws.NewDocument("") })
 				}
 			})

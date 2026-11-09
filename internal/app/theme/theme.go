@@ -6,6 +6,7 @@ package theme
 import (
 	"embed"
 
+	"github.com/egoist/mygo/plugins/glass"
 	"github.com/egoist/mygo/plugins/sfsymbols"
 	"github.com/egoist/mygo/ui"
 )
@@ -118,8 +119,42 @@ func Elevate(e ui.Element, t *ui.Theme) ui.Element {
 	return e.Shadow(0, 0, 0, 1, Ring(t)).Shadow(0, 2, 6, 0, ui.RGBA(0, 0, 0, 0.06)).Shadow(0, 12, 32, 0, ui.RGBA(0, 0, 0, 0.14))
 }
 
-// Dialog is a modal's panel as every dialog shows it.
-func Dialog(panel ui.Element, t *ui.Theme) ui.Element { return Elevate(panel.Radius(14), t) }
+// Scrim dims the window behind a dialog, lightly, as macOS dims it behind a sheet.
+var Scrim = ui.RGBA(0, 0, 0, 0.2)
+
+// PanelRadius rounds dialogs and the search panel, as macOS 26 rounds its sheets.
+const PanelRadius = 22
+
+// Panel raises a dialog's or a popover's panel on glass, so that what is behind it tints it.
+func Panel(panel ui.Element, t *ui.Theme) ui.Element {
+	tint := t.Background
+	tint.A = 204
+	return Elevate(panel.Material(glass.Glass{Tint: tint}), t)
+}
+
+// Modal is ui.Modal with the look every dialog has: a light scrim and a round panel of glass.
+func Modal(c *ui.Context, open *bool, fn func()) ui.Element {
+	t := c.Theme()
+	width, height := c.Size()
+	return ui.DialogBase(c, open, func(backdrop, panel ui.Element) {
+		backdrop.Background(Scrim)
+		Panel(panel.Padding(20).Gap(12).Radius(PanelRadius).MaxWidth(width-40).MaxHeight(height-40), t)
+		fn()
+	})
+}
+
+// Button is a push button, a capsule as macOS 26's.
+func Button(c *ui.Context, label string) ui.Element {
+	return ui.Button(c, label).Radius(capsule).BorderWidth(0)
+}
+
+// PrimaryButton is a dialog's or a page's main action, an accent capsule.
+func PrimaryButton(c *ui.Context, label string) ui.Element {
+	return ui.PrimaryButton(c, label).Radius(capsule)
+}
+
+// capsule is a radius past half of any control's height.
+const capsule = 100
 
 // Tabular sets digits in equal widths, for counts and dates that change or line up.
 func Tabular(e ui.Element) ui.Element { return e.FontFeatures("tnum") }
@@ -133,6 +168,30 @@ func IconButton(c *ui.Context, glyph Icon, label string) ui.Element {
 		b.Background(Hover(t))
 	}
 	b.Children(func() { Glyph(c, glyph, 17, t.TextMuted) })
+	return b
+}
+
+// BarControl is the height of a bar's controls, and BarRadius rounds them into capsules.
+const (
+	BarControl = 36
+	BarRadius  = BarControl / 2
+)
+
+// BarGroup holds a bar's buttons on one capsule of glass, as macOS 26's toolbars group theirs.
+func BarGroup(c *ui.Context, buttons func()) ui.Element {
+	return ui.Row(c).Height(BarControl).Shrink(0).AlignItems(ui.Center).Padding(0, 4).Radius(BarRadius).Material(glass.Glass{}).
+		Shadow(0, 0, 0, 1, Ring(c.Theme())).Shadow(0, 1, 4, 0, ui.RGBA(0, 0, 0, 0.08)).Children(buttons)
+}
+
+// BarButton is a button of a BarGroup showing glyph, named label for the
+// tooltip and assistive technology.
+func BarButton(c *ui.Context, glyph Icon, label string) ui.Element {
+	t := c.Theme()
+	b := ui.ButtonBase(c).Label(label).Tooltip(label).Size(36, 28).Shrink(0).Center().Radius(14)
+	if b.Hovered() {
+		b.Background(Hover(t))
+	}
+	b.Children(func() { Glyph(c, glyph, 16, t.Text) })
 	return b
 }
 
@@ -162,7 +221,7 @@ func EmptyState(c *ui.Context, glyph Icon, title, text string, more func()) {
 // AddButton is a bar's primary action: a plus and label in an accent capsule, as macOS 26's toolbars.
 func AddButton(c *ui.Context, label string) ui.Element {
 	t := c.Theme()
-	return ui.PrimaryButton(c, "").Label(label).Height(28).Padding(0, 12, 0, 10).Gap(5).Radius(14).Children(func() {
+	return ui.PrimaryButton(c, "").Label(label).Height(BarControl).Padding(0, 16, 0, 13).Gap(5).Radius(BarRadius).Children(func() {
 		Glyph(c, Icons.Plus, 12, t.AccentText)
 		ui.Text(c, label).FontSize(13).FontWeight(500).TextColor(t.AccentText).SingleLine()
 	})

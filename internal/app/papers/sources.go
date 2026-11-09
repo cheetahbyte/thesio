@@ -161,7 +161,7 @@ func (s *State) sourcesTable(c *ui.Context, papers []paper) {
 		case 3:
 			if p.linked {
 				ui.Text(c, p.row.Key).SingleLine().Font(theme.Mono).FontSize(12).TextColor(muted)
-			} else if ui.Button(c, "Link to Source…").FontSize(12).Clicked() {
+			} else if theme.Button(c, "Link to Source…").FontSize(12).Clicked() {
 				s.linkToSource(p.id)
 			}
 		}

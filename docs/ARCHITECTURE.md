@@ -353,8 +353,9 @@ drawn with `theme.Glyph` as SF Symbols on macOS and the Lucide SVGs in `icons/`
 elsewhere), the monospace font name (`theme.Mono`), the few tokens MyGo's theme lacks
 (`theme.Caption(t)`, `theme.Danger(t)`, `theme.Hairline(t)`, `theme.Hover(t)`,
 `theme.Selected(t)`, `theme.Ring(t)`), and the chrome every page shares: `theme.BarHeight`,
-`theme.Title`, `theme.IconButton`, `theme.AddButton`, `theme.EmptyState`, and
-`theme.Dialog` for modals. A page's top bar is `host.Host.Bar`, which keeps clear of the
+`theme.Title`, `theme.IconButton`, `theme.AddButton`, `theme.EmptyState`,
+`theme.BarGroup` and `theme.BarButton` for a bar's buttons on glass, `theme.Button` and
+`theme.PrimaryButton` for push buttons, and `theme.Modal` for modals. A page's top bar is `host.Host.Bar`, which keeps clear of the
 traffic lights; the sidebar sits on the window's sidebar material, the main pane on
 `t.Background`. Everything else is `c.Theme()`.
 

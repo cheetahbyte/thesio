@@ -56,7 +56,7 @@ func (s *State) pickerView(c *ui.Context) {
 	t := c.Theme()
 	rows := s.pickerRows()
 	var after func()
-	theme.Dialog(ui.Modal(c.Key("source-picker"), &s.picker.open, func() {
+	theme.Modal(c.Key("source-picker"), &s.picker.open, func() {
 		ui.Column(c).Width(520).Gap(8).Children(func() {
 			if s.picker.opts.Prompt != "" {
 				ui.Text(c, s.picker.opts.Prompt).FontSize(13).FontWeight(600).PaddingX(4)
@@ -100,7 +100,7 @@ func (s *State) pickerView(c *ui.Context) {
 			}
 			if alt := s.picker.opts.Alternative; alt != "" {
 				ui.Row(c).Children(func() {
-					if ui.Button(c.Key("picker-alternative"), alt).Clicked() {
+					if theme.Button(c.Key("picker-alternative"), alt).Clicked() {
 						on := s.picker.opts.OnAlternative
 						after = func() {
 							s.picker.open = false
@@ -112,7 +112,7 @@ func (s *State) pickerView(c *ui.Context) {
 				})
 			}
 		})
-	}), c.Theme())
+	})
 	if after != nil {
 		after()
 	}

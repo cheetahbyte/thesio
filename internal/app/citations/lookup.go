@@ -123,7 +123,7 @@ func (s *State) lookupView(c *ui.Context) {
 	}
 	t := c.Theme()
 	var after func()
-	theme.Dialog(ui.Modal(c.Key("lookup"), &s.lookup.open, func() {
+	theme.Modal(c.Key("lookup"), &s.lookup.open, func() {
 		ui.Column(c).Width(480).Gap(10).Children(func() {
 			ui.Text(c, "Add by identifier").FontSize(15).FontWeight(600)
 			ui.Text(c, "Enter one or more DOIs, arXiv IDs, PMIDs, or ISBNs. Each is sent to doi.org, NCBI, or Open Library, and Thesio looks for an open-access PDF through arXiv and Unpaywall.").
@@ -135,24 +135,24 @@ func (s *State) lookupView(c *ui.Context) {
 				ui.Text(c, problem).FontSize(13).TextColor(theme.Danger(t))
 			}
 			ui.Row(c).Gap(8).Padding(8, 0, 0, 0).Children(func() {
-				if ui.Button(c.Key("lookup-manual"), "Enter Manually…").Clicked() {
+				if theme.Button(c.Key("lookup-manual"), "Enter Manually…").Clicked() {
 					after = func() {
 						s.lookup.open = false
 						s.OpenNewEntry()
 					}
 				}
 				ui.Spacer(c)
-				if ui.Button(c.Key("lookup-cancel"), "Cancel").Clicked() {
+				if theme.Button(c.Key("lookup-cancel"), "Cancel").Clicked() {
 					s.lookup.open = false
 				}
 				if s.lookup.busy {
 					ui.Text(c, "Looking up…").FontSize(13).TextColor(theme.Caption(t)).PaddingX(12)
-				} else if ui.PrimaryButton(c.Key("lookup-add"), "Add").Clicked() {
+				} else if theme.PrimaryButton(c.Key("lookup-add"), "Add").Clicked() {
 					after = s.runLookup
 				}
 			})
 		})
-	}), c.Theme())
+	})
 	if after != nil {
 		after()
 	}

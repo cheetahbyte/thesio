@@ -248,7 +248,7 @@ func (s *State) inspectorView(c *ui.Context) {
 	ui.Scroll(c.Key("inspector")).Width(inspectorW).Shrink(0).Background(theme.Group(t)).
 		BorderStartWidth(1).BorderColor(theme.Hairline(t)).Padding(8, 12, 16, 12).Children(func() {
 		row("Type", func() {
-			ui.PopoverMenuButton(c.Key("inspector-type"), kind.Label, func(m *ui.Menu) {
+			ui.MenuButton(c.Key("inspector-type"), kind.Label, func(m *ui.Menu) {
 				for _, k := range library.SourceTypes {
 					if m.Item(k.Label).Checked(k == kind).Chosen() {
 						after = func() { s.chooseType(k) }

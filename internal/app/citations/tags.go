@@ -94,7 +94,7 @@ func (s *State) finishTagRename() {
 
 func popoverPanel(t *ui.Theme, panel ui.Element, width float32) {
 	// Rows are rounded 6 inside 6 of padding: the panel's 12 is concentric.
-	theme.Elevate(panel.Width(width).Margin(6, 0, 0, 0).Padding(6).Radius(12).Background(t.Background), t)
+	theme.Panel(panel.Width(width).Margin(6, 0, 0, 0).Padding(6).Radius(12), t)
 }
 
 func (s *State) tagRenameView(c *ui.Context, chip ui.Element) {

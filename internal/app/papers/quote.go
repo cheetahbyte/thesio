@@ -82,7 +82,7 @@ func (s *State) Overlays(c *ui.Context) {
 	}
 	q := s.quote
 	t := c.Theme()
-	theme.Dialog(ui.Modal(c, &s.quoting, func() {
+	theme.Modal(c, &s.quoting, func() {
 		ui.Column(c).Width(480).Gap(10).AlignItems(ui.Stretch).Children(func() {
 			ui.Text(c, "Insert Quote").FontSize(15).FontWeight(600)
 			ui.Text(c, "Text read from a PDF can contain errors, so check it against the paper. It goes into "+s.quoteTarget()+", cited as @"+q.key+".").FontSize(13).TextColor(theme.Caption(t))
@@ -93,13 +93,13 @@ func (s *State) Overlays(c *ui.Context) {
 				ui.Text(c, "Correct a number once and the rest of this paper follows.").FontSize(12).TextColor(theme.Caption(t)).Grow(1)
 			})
 			ui.Row(c).Gap(8).Justify(ui.End).Margin(8, 0, 0).Children(func() {
-				if ui.Button(c, "Cancel").Clicked() {
+				if theme.Button(c, "Cancel").Clicked() {
 					s.quoting = false
 				}
-				ui.PrimaryButton(c, "Insert").OnClick(s.insertQuote)
+				theme.PrimaryButton(c, "Insert").OnClick(s.insertQuote)
 			})
 		})
-	}), c.Theme())
+	})
 	if !s.quoting {
 		s.quote = nil
 	}

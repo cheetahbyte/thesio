@@ -68,7 +68,7 @@ func (ws *Workspace) purgeDoc(id string) {
 
 func (ws *Workspace) trashView(c *ui.Context) {
 	t := c.Theme()
-	ws.pageHeader(c, "Trash", func() { ws.searchButton(c) })
+	ws.pageHeader(c, "Trash", func() { theme.BarGroup(c, func() { ws.searchButton(c) }) })
 	if len(ws.trash) == 0 {
 		emptyState(c, theme.Icons.Delete, "Trash is empty", "Deleted documents stay here for a while.", nil)
 		return
@@ -99,7 +99,7 @@ func (ws *Workspace) trashView(c *ui.Context) {
 					ws.after(func() { ws.askPurge(id) })
 				}
 			}
-			row := ui.Row(c.Key(id)).Height(40).AlignItems(ui.Center).PopoverMenu(menu)
+			row := ui.Row(c.Key(id)).Height(40).AlignItems(ui.Center).ContextMenu(menu)
 			if i > 0 {
 				row.BorderWidth(1, 0, 0, 0).BorderColor(theme.Hairline(t))
 			}
@@ -114,7 +114,7 @@ func (ws *Workspace) trashView(c *ui.Context) {
 				})
 				theme.Tabular(ui.Text(c, remaining(item.Deleted, now)).FontSize(13).TextColor(theme.Caption(t)).Width(168).PaddingStart(12))
 				ui.Row(c).Width(48).Justify(ui.End).PaddingEnd(4).Children(func() {
-					theme.IconButton(c, theme.Icons.Ellipsis, "More").PopoverMenuButton(menu)
+					theme.IconButton(c, theme.Icons.Ellipsis, "More").Menu(menu)
 				})
 			})
 		}

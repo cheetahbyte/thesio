@@ -96,21 +96,23 @@ func (s *State) PaperView(c *ui.Context) {
 	t := c.Theme()
 	ui.Column(c).Fill().AlignItems(ui.Stretch).Children(func() {
 		s.header(c, s.PaperTitle(s.current), 0, func() {
-			ui.Toolbar(c, func() {
-				if toolButton(c, theme.Icons.Highlight, "Highlight Selection").Clicked() {
-					s.highlightSelection()
-				}
-				panel := toolButton(c, theme.Icons.Panel, "Notes and Highlights")
-				if !s.panelHidden {
-					panel.Background(theme.Selected(t))
-				}
-				if panel.Clicked() {
-					s.panelHidden = !s.panelHidden
-				}
-				if toolButton(c, theme.Icons.External, "Open in Default App").Clicked() {
-					s.openExternally()
-				}
-			}).Label("Paper").Gap(2)
+			theme.BarGroup(c, func() {
+				ui.Toolbar(c, func() {
+					if toolButton(c, theme.Icons.Highlight, "Highlight Selection").Clicked() {
+						s.highlightSelection()
+					}
+					panel := toolButton(c, theme.Icons.Panel, "Notes and Highlights")
+					if !s.panelHidden {
+						panel.Background(theme.Selected(t))
+					}
+					if panel.Clicked() {
+						s.panelHidden = !s.panelHidden
+					}
+					if toolButton(c, theme.Icons.External, "Open in Default App").Clicked() {
+						s.openExternally()
+					}
+				}).Label("Paper")
+			})
 		})
 		ui.Row(c).Grow(1).MinHeight(0).AlignItems(ui.Stretch).Children(func() {
 			if s.web != nil {
@@ -128,7 +130,7 @@ func (s *State) PaperView(c *ui.Context) {
 }
 
 func toolButton(c *ui.Context, icon theme.Icon, label string) ui.Element {
-	return theme.IconButton(c, icon, label)
+	return theme.BarButton(c, icon, label)
 }
 
 func (s *State) panel(c *ui.Context) {

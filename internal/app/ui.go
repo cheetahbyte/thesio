@@ -102,7 +102,7 @@ func (ws *Workspace) sidebarToggle(c *ui.Context) {
 }
 
 func (ws *Workspace) searchButton(c *ui.Context) {
-	if iconButton(c, theme.Icons.Search, "Search").Clicked() {
+	if theme.BarButton(c, theme.Icons.Search, "Search").Clicked() {
 		ws.openSearch()
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/cheetahbyte/thesio/internal/app/host"
 	"github.com/cheetahbyte/thesio/internal/app/theme"
 	"github.com/cheetahbyte/thesio/internal/vault"
+	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 )
@@ -67,7 +68,7 @@ func dialogButtons(c *ui.Context, fn func()) {
 
 func dangerButton(c *ui.Context, label string) ui.Element {
 	t := c.Theme()
-	b := ui.PrimaryButton(c, label).Background(t.Danger).TextColor(t.AccentText)
+	b := theme.PrimaryButton(c, label).Background(t.Danger).TextColor(t.AccentText)
 	return b
 }
 
@@ -76,14 +77,19 @@ func (ws *Workspace) confirmDialog(c *ui.Context) {
 		return
 	}
 	cf := ws.confirm
-	theme.Dialog(ui.Modal(c, &ws.confirm.open, func() {
+	if ws.win != nil {
+		ws.confirm.open = false
+		go ws.confirmSheet(cf)
+		return
+	}
+	theme.Modal(c, &ws.confirm.open, func() {
 		ui.Text(c, cf.title).FontSize(15).FontWeight(600)
 		ui.Text(c, cf.body).FontSize(13).TextColor(theme.Caption(c.Theme()))
 		dialogButtons(c, func() {
-			if ui.Button(c, "Cancel").Clicked() {
+			if theme.Button(c, "Cancel").Clicked() {
 				ws.confirm.open = false
 			}
-			if cf.other != "" && ui.Button(c, cf.other).TextColor(c.Theme().Danger).Clicked() {
+			if cf.other != "" && theme.Button(c, cf.other).TextColor(c.Theme().Danger).Clicked() {
 				ws.confirm.open = false
 				ws.after(cf.orElse)
 			}
@@ -91,14 +97,40 @@ func (ws *Workspace) confirmDialog(c *ui.Context) {
 			if cf.danger {
 				action = dangerButton(c, cf.action)
 			} else {
-				action = ui.PrimaryButton(c, cf.action)
+				action = theme.PrimaryButton(c, cf.action)
 			}
 			if action.Clicked() {
 				ws.confirm.open = false
 				ws.after(cf.then)
 			}
 		})
-	}).Width(400), c.Theme())
+	}).Width(400)
+}
+
+// confirmSheet asks cf with the system's alert, a sheet on the window; it blocks, so it runs on its own goroutine.
+func (ws *Workspace) confirmSheet(cf confirmState) {
+	const action, other = 1, 2
+	opts := mygo.MessageOptions{Parent: ws.win, Message: cf.title, Detail: cf.body, Buttons: []string{"Cancel", cf.action}, DefaultButton: action}
+	if cf.danger {
+		opts.DestructiveButtons = append(opts.DestructiveButtons, action)
+	}
+	if cf.other != "" {
+		opts.Buttons = append(opts.Buttons, cf.other)
+		opts.DestructiveButtons = append(opts.DestructiveButtons, other)
+	}
+	res, err := mygo.Dialog.Message(opts)
+	if err != nil {
+		ws.ToastError(fmt.Sprintf("Could not ask %q: %v", cf.title, err))
+		return
+	}
+	ws.Update(func() {
+		switch res.Button {
+		case action:
+			ws.after(cf.then)
+		case other:
+			ws.after(cf.orElse)
+		}
+	})
 }
 
 // openMove opens the Move to dialog for ids.
@@ -121,9 +153,9 @@ func (ws *Workspace) moveDialog(c *ui.Context) {
 		}
 	}
 	q := strings.ToLower(strings.TrimSpace(ws.move.query))
-	theme.Dialog(ui.Modal(c, &ws.move.open, func() {
+	theme.Modal(c, &ws.move.open, func() {
 		ui.Text(c, "Move from Files to").FontSize(15).FontWeight(600)
-		ui.Row(c).Height(512).Margin(8, 0, 0, 0).Radius(8).Border(1, theme.Hairline(t)).Clip().AlignItems(ui.Stretch).Children(func() {
+		ui.Row(c).Height(512).Margin(8, 0, 0, 0).Radius(10).Border(1, theme.Hairline(t)).Clip().AlignItems(ui.Stretch).Children(func() {
 			ui.Column(c).Width(240).Padding(12, 8).Gap(10).Background(theme.Group(t)).BorderWidth(0, 1, 0, 0).BorderColor(theme.Hairline(t)).Children(func() {
 				ui.SearchField(c, &ws.move.query).Placeholder("Search destinations").AutoFocus()
 				ui.Row(c).Height(30).PaddingX(10).Gap(8).Radius(6).Background(theme.Selected(t)).AlignItems(ui.Center).Children(func() {
@@ -159,17 +191,17 @@ func (ws *Workspace) moveDialog(c *ui.Context) {
 			})
 		})
 		dialogButtons(c, func() {
-			if ui.Button(c, "Cancel").Clicked() {
+			if theme.Button(c, "Cancel").Clicked() {
 				ws.move.open = false
 			}
-			if ui.PrimaryButton(c, "OK").Disabled(!ws.move.picked).Clicked() {
+			if theme.PrimaryButton(c, "OK").Disabled(!ws.move.picked).Clicked() {
 				ids, target := ws.move.ids, ws.move.target
 				ws.move.open = false
 				ws.exitSelection()
 				ws.after(func() { ws.moveDocs(ids, target) })
 			}
 		})
-	}).Width(min(828, width-48)), c.Theme())
+	}).Width(min(828, width-48))
 }
 
 // moveRow is a destination: the vault root (id "") or a folder.
@@ -326,14 +358,14 @@ func (ws *Workspace) historyDialog(c *ui.Context) {
 	h := &ws.history
 	width, height := c.Size()
 	now := vault.Now()
-	theme.Dialog(ui.Modal(c, &h.open, func() {
+	theme.Modal(c, &h.open, func() {
 		name := vault.BaseName(h.id)
 		if h.library {
 			name = "the Library"
 		}
 		ui.Text(c, "Version History of "+name).FontSize(15).FontWeight(600)
 		ui.Text(c, "Green is what restoring brings back. Red is what it replaces.").FontSize(12).TextColor(theme.Caption(t))
-		ui.Row(c).Grow(1).Margin(12, 0, 0, 0).Border(1, theme.Hairline(t)).Radius(8).Clip().AlignItems(ui.Stretch).Children(func() {
+		ui.Row(c).Grow(1).Margin(12, 0, 0, 0).Border(1, theme.Hairline(t)).Radius(10).Clip().AlignItems(ui.Stretch).Children(func() {
 			ui.Scroll(c.Key("versions")).Width(220).Padding(8).BorderWidth(0, 1, 0, 0).BorderColor(theme.Hairline(t)).Children(func() {
 				for i, time := range h.versions {
 					row := ui.ButtonBase(c.Key(time)).Height(30).PaddingX(10).Radius(6).AlignItems(ui.Center)
@@ -358,14 +390,14 @@ func (ws *Workspace) historyDialog(c *ui.Context) {
 			})
 		})
 		dialogButtons(c, func() {
-			if ui.Button(c, "Close").Clicked() {
+			if theme.Button(c, "Close").Clicked() {
 				h.open = false
 			}
-			if ui.PrimaryButton(c, "Restore This Version").Disabled(h.same || len(h.versions) == 0).Clicked() {
+			if theme.PrimaryButton(c, "Restore This Version").Disabled(h.same || len(h.versions) == 0).Clicked() {
 				ws.after(ws.restoreVersion)
 			}
 		})
-	}).Width(min(960, width-48)).Height(min(620, height-48)), c.Theme())
+	}).Width(min(960, width-48)).Height(min(620, height-48))
 }
 
 func (ws *Workspace) wordCountDialog(c *ui.Context) {
@@ -388,7 +420,7 @@ func (ws *Workspace) wordCountDialog(c *ui.Context) {
 			theme.Tabular(ui.Text(c, formatCount(count)).FontSize(13).TextColor(theme.Caption(t)))
 		})
 	}
-	theme.Dialog(ui.Modal(c, &ws.words, func() {
+	theme.Modal(c, &ws.words, func() {
 		ui.Text(c, "Word Count").FontSize(15).FontWeight(600).Margin(0, 0, 10, 0)
 		ui.Scroll(c.Key("word-count-files")).MaxHeight(320).Children(func() {
 			for _, f := range files {
@@ -400,9 +432,9 @@ func (ws *Workspace) wordCountDialog(c *ui.Context) {
 		})
 		ui.Text(c, "Counts the text the document draws. The bibliography and page numbers are left out.").FontSize(12).TextColor(theme.Caption(t)).Margin(8, 0, 0, 0)
 		dialogButtons(c, func() {
-			if ui.Button(c, "Close").Clicked() {
+			if theme.Button(c, "Close").Clicked() {
 				ws.words = false
 			}
 		})
-	}).Width(440), c.Theme())
+	}).Width(440)
 }

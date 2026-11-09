@@ -97,7 +97,7 @@ func (s *State) header(c *ui.Context, canEdit bool, total int) {
 			theme.Count(c, strconv.Itoa(total))
 		}
 		ui.Spacer(c)
-		if ui.SearchField(c.Key("library-search"), &s.search).Placeholder("Search").Label("Search library").Width(200).Margin(0, 6, 0, 0).Changed() {
+		if ui.SearchField(c.Key("library-search"), &s.search).Placeholder("Search").Label("Search library").Width(200).Height(theme.BarControl).Radius(theme.BarRadius).Changed() {
 			s.TableChanged()
 		}
 		if !canEdit {
@@ -108,14 +108,16 @@ func (s *State) header(c *ui.Context, canEdit bool, total int) {
 		if hidden {
 			tip = "Show details"
 		}
-		details := theme.IconButton(c.Key("library-details"), theme.Icons.Panel, tip)
-		if !hidden {
-			details.Background(theme.Selected(c.Theme()))
-		}
-		if details.Clicked() {
-			s.setDetailsHidden(!hidden)
-		}
-		theme.IconButton(c.Key("library-more"), theme.Icons.Ellipsis, "More").PopoverMenuButton(s.libraryMenu)
+		theme.BarGroup(c, func() {
+			details := theme.BarButton(c.Key("library-details"), theme.Icons.Panel, tip)
+			if !hidden {
+				details.Background(theme.Selected(c.Theme()))
+			}
+			if details.Clicked() {
+				s.setDetailsHidden(!hidden)
+			}
+			theme.BarButton(c.Key("library-more"), theme.Icons.Ellipsis, "More").Menu(s.libraryMenu)
+		})
 		if theme.AddButton(c.Key("library-add"), "Add").Clicked() {
 			s.OpenLookup()
 		}
@@ -192,7 +194,7 @@ func (s *State) chip(c *ui.Context, filter, label string, count int) {
 	if filter == "" {
 		return
 	}
-	chip.PopoverMenu(func(m *ui.Menu) {
+	chip.ContextMenu(func(m *ui.Menu) {
 		if m.Item("Rename…").Chosen() {
 			s.tagRename = tagRename{open: true, tag: filter, text: filter}
 		}
@@ -270,7 +272,7 @@ func (s *State) cell(c *ui.Context, row library.Row, col string, accent bool) {
 	case colKey:
 		ui.Text(c, row.Key).Font(theme.Mono).FontSize(12).TextColor(muted).SingleLine()
 	case colCite:
-		if ui.Button(c, "Cite").FontSize(12).Height(22).Padding(0, 10).Clicked() {
+		if theme.Button(c, "Cite").FontSize(12).Height(22).Padding(0, 10).Clicked() {
 			s.h.InsertCitation(row.Key)
 		}
 	default:
