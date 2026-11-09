@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.3
+
+- Update the app from inside it: Thesio checks for a new version at launch and once a day, shows its release notes, and downloads only what changed when it can. Check for Updates… in the Thesio menu checks at once. Apps installed as a Debian package are still updated by the package manager.
+
 ## 0.1.2
 
 - Pick up changes made to the vault outside the app: the file list, open editors and included-file previews follow files that are created, edited, moved or deleted elsewhere. An editor with unsaved changes keeps them when the file changes on disk, and autosave no longer overwrites an outside edit or brings back a deleted file.
