@@ -112,6 +112,15 @@ jobs:
         run: |
           echo '${{ steps.msys2.outputs.msys2-location }}\mingw64\bin' >> "$GITHUB_PATH"
 
+      # Otherwise cargo, cc and cgo target the runner's macOS, and the app needs that version
+      # whatever Info.plist says (#9). The flag in CGO_CFLAGS keys Go's build cache on it.
+      - name: Target the oldest supported macOS
+        if: runner.os == 'macOS'
+        run: |
+          target=$(jq -r .macos.minimumSystemVersion mygo.json)
+          echo "MACOSX_DEPLOYMENT_TARGET=$target" >> "$GITHUB_ENV"
+          echo "CGO_CFLAGS=-O2 -g -mmacosx-version-min=$target" >> "$GITHUB_ENV"
+
       # The built library, keyed on the crate's sources: a change elsewhere compiles no Rust.
       # The built libraries, keyed on the crate's sources: a change elsewhere compiles
       # no Rust, and a macOS build starts from the arm64 library CI built for the merge.
@@ -120,8 +129,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: typst/target/*/release/libthesio_typst.a
-          key: typst-lib-${{ matrix.platform }}-${{ hashFiles('typst/**') }}
-          restore-keys: typst-lib-ci-aarch64-apple-darwin-${{ hashFiles('typst/**') }}
+          key: typst-lib-${{ matrix.platform }}-macos${{ env.MACOSX_DEPLOYMENT_TARGET }}-${{ hashFiles('typst/**') }}
+          restore-keys: typst-lib-ci-aarch64-apple-darwin-macos${{ env.MACOSX_DEPLOYMENT_TARGET }}-${{ hashFiles('typst/**') }}
 
       - name: Build the Typst library
         if: steps.typst-lib.outputs.cache-hit != 'true'
@@ -165,6 +174,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           MYGO_UPDATER_PRIVATE_KEY: ${{ secrets.MYGO_UPDATER_PRIVATE_KEY }}
         run: go tool mygo build -platform "${{ matrix.platform }}"
+
+      - name: Check the app runs on its minimum macOS
+        if: runner.os == 'macOS'
+        run: |
+          tar -xzf build/darwin-universal/thesio-*-darwin-universal.tar.gz -C "$RUNNER_TEMP"
+          scripts/check-macos-target.sh "$RUNNER_TEMP/Thesio.app"
 
       - uses: actions/upload-artifact@v4
         with:

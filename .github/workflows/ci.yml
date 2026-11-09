@@ -53,13 +53,17 @@ jobs:
         run: |
           echo "triple=$(rustc -vV | sed -n 's/^host: //p')" >> "$GITHUB_OUTPUT"
 
+      # The release's macOS job restores this library, so it targets the app's minimum macOS.
+      - name: Target the oldest supported macOS
+        run: echo "MACOSX_DEPLOYMENT_TARGET=$(jq -r .macos.minimumSystemVersion mygo.json)" >> "$GITHUB_ENV"
+
       # The built library, keyed on the crate's sources; the release's macOS job restores it too.
       - name: Restore the Typst library
         id: typst-lib
         uses: actions/cache@v4
         with:
           path: typst/target/*/release/libthesio_typst.a
-          key: typst-lib-ci-${{ steps.host.outputs.triple }}-${{ hashFiles('typst/**') }}
+          key: typst-lib-ci-${{ steps.host.outputs.triple }}-macos${{ env.MACOSX_DEPLOYMENT_TARGET }}-${{ hashFiles('typst/**') }}
 
       - name: Rust tests, clippy and the library build
         if: steps.typst-lib.outputs.cache-hit != 'true'
