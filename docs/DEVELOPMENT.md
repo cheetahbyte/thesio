@@ -28,7 +28,7 @@ CGO_ENABLED=1 go tool mygo build -platform darwin/universal
 
 ## Release
 
-Pushing a tag `vX.Y.Z` runs `.github/workflows/release.yml`. It builds the universal macOS app, Linux x64 and arm64, and Windows x64, each on its own runner, and uploads them with signed updates to a draft release of the tag.
+Pushing a tag `vX.Y.Z` runs `.github/workflows/release.yml`. It builds the universal macOS app, Linux x64 and arm64, and Windows x64, each on its own runner, and uploads them with signed updates to a draft release of the tag. Each runner restores its Typst library from `.github/workflows/typst-lib.yml`, which builds them on `main` whenever `typst/` changes: a tag's run cannot read caches another tag saved. Before tagging a change to `typst/`, let that workflow finish, or the release builds the Rust libraries itself.
 
 1. Set `version` in `mygo.json` to `X.Y.Z`. The workflow fails when the tag does not match it.
 2. Move the `Unreleased` entries of `CHANGELOG.md` under `## X.Y.Z`. The update window shows that section.

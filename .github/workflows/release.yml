@@ -32,7 +32,7 @@ jobs:
       fail-fast: false
       matrix:
         # One platform per row: mygo build takes one CC for all the targets of a run,
-        # and the Rust library is built for each target's triple.
+        # and the Rust library is built for each target's triple. typst-lib.yml repeats it.
         include:
           - { name: macOS, os: macos-latest, platform: darwin/universal, triples: "aarch64-apple-darwin x86_64-apple-darwin" }
           # Linux on 22.04: its glibc 2.35 and plain x86-64 baseline are the oldest the app
@@ -81,71 +81,11 @@ jobs:
         with:
           go-version-file: go.mod
 
-      # typst/rust-toolchain.toml pins the channel; scripts/build-typst.sh adds the targets.
-      - name: Install Rust
-        run: |
-          command -v rustup > /dev/null || {
-            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain none
-            echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
-            export PATH="$HOME/.cargo/bin:$PATH"
-          }
-          rustup toolchain install
-        working-directory: typst
-
-      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      # Restored from what the Typst library workflow built on main; built only on a miss.
+      - uses: ./.github/actions/typst-lib
         with:
-          workspaces: typst
-          key: ${{ matrix.platform }}
-          cache-on-failure: true
-
-      # cgo and the Rust gnu target need MinGW: gcc for the C code of ring and psm and
-      # for cgo, dlltool for the windows crates' import libraries.
-      - uses: msys2/setup-msys2@v2
-        if: runner.os == 'Windows'
-        id: msys2
-        with:
-          msystem: MINGW64
-          install: mingw-w64-x86_64-gcc
-          path-type: inherit
-      - name: Put MinGW on the PATH
-        if: runner.os == 'Windows'
-        run: |
-          echo '${{ steps.msys2.outputs.msys2-location }}\mingw64\bin' >> "$GITHUB_PATH"
-
-      # Otherwise cargo, cc and cgo target the runner's macOS, and the app needs that version
-      # whatever Info.plist says (#9). The flag in CGO_CFLAGS keys Go's build cache on it.
-      - name: Target the oldest supported macOS
-        if: runner.os == 'macOS'
-        run: |
-          target=$(jq -r .macos.minimumSystemVersion mygo.json)
-          echo "MACOSX_DEPLOYMENT_TARGET=$target" >> "$GITHUB_ENV"
-          echo "CGO_CFLAGS=-O2 -g -mmacosx-version-min=$target" >> "$GITHUB_ENV"
-
-      # The built library, keyed on the crate's sources: a change elsewhere compiles no Rust.
-      # The built libraries, keyed on the crate's sources: a change elsewhere compiles
-      # no Rust, and a macOS build starts from the arm64 library CI built for the merge.
-      - name: Restore the Typst library
-        id: typst-lib
-        uses: actions/cache@v4
-        with:
-          path: typst/target/*/release/libthesio_typst.a
-          key: typst-lib-${{ matrix.platform }}-macos${{ env.MACOSX_DEPLOYMENT_TARGET }}-${{ hashFiles('typst/**') }}
-          restore-keys: typst-lib-ci-aarch64-apple-darwin-macos${{ env.MACOSX_DEPLOYMENT_TARGET }}-${{ hashFiles('typst/**') }}
-
-      - name: Build the Typst library
-        if: steps.typst-lib.outputs.cache-hit != 'true'
-        env:
-          THESIO_SKIP_BUILT: "1"
-        run: scripts/build-typst.sh ${{ matrix.triples }}
-
-      # internal/typst/cgo.go lists these system libraries per OS; compare when a link fails.
-      - name: Show the native libraries the Typst library needs
-        if: steps.typst-lib.outputs.cache-hit != 'true'
-        working-directory: typst
-        run: |
-          for target in ${{ matrix.triples }}; do
-            cargo rustc --release --target "$target" --lib -- --print native-static-libs 2>&1 | grep native-static-libs
-          done
+          platform: ${{ matrix.platform }}
+          triples: ${{ matrix.triples }}
 
       - name: Cache NSIS
         if: runner.os == 'Windows'
