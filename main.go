@@ -12,6 +12,8 @@ import (
 	"github.com/cheetahbyte/thesio/internal/project"
 	"github.com/cheetahbyte/thesio/internal/vault"
 	"github.com/egoist/mygo"
+	"github.com/egoist/mygo/plugins/updater"
+	"github.com/egoist/mygo/plugins/updater/native"
 	"github.com/egoist/mygo/ui"
 )
 
@@ -20,6 +22,7 @@ var icon []byte
 
 func main() {
 	mygo.App.SetName("Thesio")
+	mygo.Use(native.Plugin)
 	app.AppIcon = icon
 	app.Wire()
 	store, warnings, err := vault.Open()
@@ -80,6 +83,7 @@ func main() {
 	mygo.App.SetMenu(mygo.NewMenu([]*mygo.MenuItem{
 		{Role: mygo.RoleAppMenu, Submenu: []*mygo.MenuItem{
 			{Label: "About Thesio", Click: run(app.CmdAbout)},
+			updater.MenuItem(),
 			mygo.Separator(),
 			{Label: "Settings…", Accelerator: "CmdOrCtrl+,", Click: run(app.CmdSettings)},
 			mygo.Separator(),
