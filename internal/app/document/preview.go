@@ -225,14 +225,17 @@ func (d *Open) previewView(c *ui.Context) {
 		ui.Box(c).Grow(1).MinHeight(0).FillWidth().Children(func() {
 			placed := layout(pages, d.pv.width)
 			d.scrollToTarget(c, placed)
-			scroll := ui.Scroll(c).TrackScroll(&d.pv.scroll).Fill().Padding(pagePad).Gap(pageGap).AlignItems(ui.Center)
+			scroll := ui.Scroll(c).TrackScroll(&d.pv.scroll).Fill().Padding(pagePad).Gap(pageGap).AlignItems(ui.Center).
+				DrawOver(func(p *ui.Painter, _ ui.Rect) { d.renderPreview(p.Scale()) })
 			if b := scroll.Bounds(); b.W != d.pv.width || b.H != d.pv.viewH {
 				d.pv.width, d.pv.viewH = b.W, b.H
 				c.Invalidate()
 			}
 			scroll.Children(func() {
 				for i, p := range pages {
-					img := ui.Image(c.Key(i), p.bitmap).Size(placed[i].width, placed[i].height).
+					img := ui.Image(c.Key(i), p.bitmap).Label(fmt.Sprintf("Page %d", i+1)).
+						Busy(p.bitmap == nil || d.s.rasterPublished != d.s.rasterLatest.Load()).
+						Fit(ui.FillBox).Size(placed[i].width, placed[i].height).Background(ui.RGB(255, 255, 255)).
 						Shadow(0, 0, 0, 1, theme.Ring(t)).Shadow(0, 1, 2, 0, ui.RGBA(0, 0, 0, 0.06)).Shadow(0, 4, 14, 0, ui.RGBA(0, 0, 0, 0.08))
 					if img.Clicked() {
 						if x, y, ok := img.PointerPosition(); ok {

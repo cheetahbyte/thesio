@@ -450,8 +450,14 @@ Editing flow: the editor is MyGo's `ui/editor` with a `Highlighter` that calls
 `typst.Highlight` on each edit; `OnCompletion` and `OnHover` ask the newest
 `Compilation`; diagnostics are `Placed` onto the buffer's version. A change schedules a
 compile on the session goroutine (one at a time, newest wins) and a save 500 ms later.
-The preview shows `Render`ed pages as bitmaps at the window's scale, re-rendered only
-when a page's hash changes.
+The preview renders visible pages and nearby pages at their fitted size multiplied by
+MyGo's physical pixel scale. Source-file ownership affects caret following, not resolution.
+Compilation supplies page geometry and content hashes; a separate debounced worker
+renders changed content or resolution without recompiling. It rejects superseded results
+and evicts distant bitmaps. Retained rasters have an 8,388,608-pixel budget; each page
+has a 4,194,304-pixel limit and a 4096-pixel edge limit. These limits exclude in-flight
+renders and native renderer textures. Exceptionally large targets can exceed the available
+raster resolution. See [Preview regression testing](PREVIEW_TESTING.md) for native checks.
 
 A document's id is its vault-relative path. Anything that renames or moves a file goes
 through `Workspace.PathChanged`.
@@ -464,7 +470,8 @@ through `Workspace.PathChanged`.
 - One window per app for now; "Open in new window" is gone.
 - MyGo draws no frames for a window that is hidden or fully covered; results of
   compiles arrive once it shows again.
-- Pages of files other than the open one render at half scale and are not blurred.
+- Preview raster limits can reduce resolution for exceptionally large pages or display scales.
+  PDF export uses the original compiled document, not preview bitmaps.
 - Only macOS is built and tested. Linux and Windows need the Rust library built
   for them and `internal/pdfkit`'s stub leaves highlights out there.
 - Everything in the previous Rust app's limits list that concerns Typst still holds:
