@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.5
 
 - Run on macOS 13 and later. Release builds needed the macOS version of the machine they were built on (macOS 26 for 0.1.4), so Finder showed Thesio as an app that cannot be opened on macOS 15 and older (#9).
 
