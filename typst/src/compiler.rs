@@ -193,9 +193,7 @@ impl Compiler {
     pub fn new(root: impl Into<PathBuf>) -> Self { Self::with_packages(root, Packages::new().into()) }
 
     pub(crate) fn with_packages(root: impl Into<PathBuf>, packages: Arc<Packages>) -> Self {
-        let mut fonts = FontStore::new();
-        fonts.extend(typst_kit::fonts::embedded());
-        let resources = Arc::new(Resources { library: LazyHash::new(Library::default()), fonts, packages });
+        let resources = Arc::new(Resources { library: LazyHash::new(Library::default()), fonts: crate::fonts::store(), packages });
         Self { root: root.into(), resources, buffers: FxHashMap::default(), files: Mutex::default() }
     }
 

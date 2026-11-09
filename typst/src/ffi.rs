@@ -119,6 +119,10 @@ pub unsafe extern "C" fn thesio_bytes_free(data: *mut u8, len: usize) {
     if !data.is_null() { drop(unsafe { Box::from_raw(std::ptr::slice_from_raw_parts_mut(data, len)) }); }
 }
 
+/// Starts the scan of the system's fonts and returns at once.
+#[unsafe(no_mangle)]
+pub extern "C" fn thesio_fonts_warm() { guard((), crate::fonts::warm) }
+
 /// Null when `root` is not UTF-8 or setup panicked.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn thesio_compiler_new(root: *const c_char) -> *mut ThesioCompiler {

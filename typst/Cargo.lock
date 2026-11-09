@@ -2514,6 +2514,7 @@ dependencies = [
  "ecow",
  "fastrand",
  "flate2",
+ "fontdb",
  "once_cell",
  "parking_lot",
  "rustc-hash",

@@ -10,6 +10,7 @@ import (
 	"github.com/cheetahbyte/thesio/internal/app/host"
 	"github.com/cheetahbyte/thesio/internal/app/theme"
 	"github.com/cheetahbyte/thesio/internal/project"
+	"github.com/cheetahbyte/thesio/internal/typst"
 	"github.com/cheetahbyte/thesio/internal/vault"
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/plugins/updater"
@@ -25,6 +26,7 @@ func main() {
 	mygo.Use(native.Plugin)
 	app.AppIcon = icon
 	app.Wire()
+	typst.WarmFonts()
 	store, warnings, err := vault.Open()
 	if err != nil {
 		log.Fatalf("Could not open the vault: %v", err)

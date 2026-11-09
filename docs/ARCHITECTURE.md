@@ -473,10 +473,13 @@ through `Workspace.PathChanged`.
   compiles arrive once it shows again.
 - Preview raster limits can reduce resolution for exceptionally large pages or display scales.
   PDF export uses the original compiled document, not preview bitmaps.
+- Documents use the fonts installed on the system, then Typst's bundled ones
+  (`typst/src/fonts.rs`). The system is scanned once per process, started at launch by
+  `typst.WarmFonts`, so a font installed while the app runs is seen after a restart.
 - Only macOS is built and tested. Linux and Windows need the Rust library built
   for them and `internal/pdfkit`'s stub leaves highlights out there.
 - Everything in the previous Rust app's limits list that concerns Typst still holds:
-  fonts are the set bundled with Typst, `@preview` names are not offered in `#import`,
+  `@preview` names are not offered in `#import`,
   paths built at run time are not updated by a move, two windows on one file are not
   kept in sync, and changes other programs make to the open file are overwritten by the
   next save.

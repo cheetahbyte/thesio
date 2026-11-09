@@ -6,6 +6,7 @@ pub mod bibliography;
 pub mod buffer;
 pub mod compiler;
 pub mod ffi;
+pub mod fonts;
 pub mod ide;
 pub mod images;
 pub mod library;

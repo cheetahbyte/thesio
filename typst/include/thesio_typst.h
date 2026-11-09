@@ -23,6 +23,10 @@ typedef struct ThesioCompilation ThesioCompilation;
 void thesio_string_free(char *text);
 void thesio_bytes_free(uint8_t *data, size_t len);
 
+/* Starts scanning the system's fonts on a thread of its own, so that the
+   first compiler does not wait for the whole scan. Calling it is optional. */
+void thesio_fonts_warm(void);
+
 /* The compiler. root is the vault folder; null when it is not UTF-8. */
 ThesioCompiler *thesio_compiler_new(const char *root);
 void thesio_compiler_free(ThesioCompiler *compiler);

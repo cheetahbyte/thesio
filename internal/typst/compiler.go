@@ -31,6 +31,10 @@ var ErrCompilerClosed = errors.New("typst: compiler is closed or its root is not
 // ErrNoPage is a page the compilation does not have.
 var ErrNoPage = errors.New("typst: no page")
 
+// WarmFonts starts scanning the system's fonts in the background, so that the
+// first compiler waits for what is left of the scan and not for all of it.
+func WarmFonts() { C.thesio_fonts_warm() }
+
 // NewCompiler is a compiler for the vault at root.
 func NewCompiler(root string) *Compiler {
 	var a arena

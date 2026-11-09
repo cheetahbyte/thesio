@@ -356,7 +356,7 @@ The following table is generated from `go list -m all`. Licenses are in each mod
 | Module | Version |
 |---|---|
 | github.com/ebitengine/purego | v0.11.1 |
-| github.com/egoist/mygo | v0.7.4 |
+| github.com/egoist/mygo | v0.7.5-0.20261106122632-2f93076a942e |
 | github.com/go-text/typesetting | v0.3.5 |
 | github.com/go-text/typesetting-utils | v0.0.0-20260419141703-4ffe8874dabc |
 | github.com/hajimehoshi/go-mp3 | v0.3.4 |
