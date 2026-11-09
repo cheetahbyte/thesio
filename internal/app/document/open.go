@@ -3,6 +3,8 @@
 package document
 
 import (
+	"errors"
+	"io/fs"
 	"strings"
 	"time"
 
@@ -68,9 +70,12 @@ type Open struct {
 	caret int
 	frame int
 
-	unsaved bool
-	status  SaveStatus
-	saveGen uint64
+	// diskText is the last version this editor accepted, not a newer external edit.
+	diskText   string
+	diskExists bool
+	unsaved    bool
+	status     SaveStatus
+	saveGen    uint64
 
 	s  *session
 	pv preview
@@ -93,7 +98,10 @@ type Open struct {
 // NewOpen opens id with text. main is the top-level document it compiles within;
 // withPreview is false for paper notes, which compile for completion and hover only.
 func NewOpen(h host.Host, id, text, main string, withPreview bool) *Open {
-	d := &Open{h: h, id: id, main: main, withPreview: withPreview, split: 50}
+	d := &Open{h: h, id: id, main: main, withPreview: withPreview, split: 50, diskText: text}
+	if _, err := h.Store().Load(id); !errors.Is(err, fs.ErrNotExist) {
+		d.diskExists = true
+	}
 	d.buf = editor.NewBuffer(text)
 	d.buf.SetLanguage(typstLanguage)
 	d.ed = newEditor(d)
@@ -124,7 +132,7 @@ func (d *Open) GoTo(offset int) {
 }
 
 // Unsaved reports changes not yet on disk.
-func (d *Open) Unsaved() bool { return d.unsaved }
+func (d *Open) Unsaved() bool { return d.unsaved || d.buf.Version() != d.seen }
 
 // Status is the save state, for the header.
 func (d *Open) Status() SaveStatus { return d.status }
@@ -206,23 +214,69 @@ func (d *Open) MarkUnsaved() { d.unsaved = true }
 func (d *Open) MarkSaved() {
 	d.saveGen++
 	d.unsaved = false
+	d.diskText, d.diskExists = d.Text(), true
 	d.status = SaveStatus{State: Saved}
+}
+
+// ReloadExternal accepts a disk update only if the editor has no pending edits.
+// Even unchanged text recompiles: an include, image or bibliography may differ.
+func (d *Open) ReloadExternal(text string) {
+	// A UI edit may be in the buffer before the next frame marks it unsaved.
+	if d.buf.Version() != d.seen {
+		d.edited()
+	}
+	if d.unsaved && text != d.diskText && text != d.Text() {
+		d.externalConflict()
+		return
+	}
+	if !d.unsaved || text == d.Text() {
+		d.SetText(text, false)
+		d.MarkSaved()
+	}
+	d.compile(false)
+}
+
+func (d *Open) externalConflict() {
+	d.saveGen++
+	const message = "File changed outside Thesio; your edits are kept here. Copy them before discarding changes and reopening the file"
+	if d.status.Error != message {
+		d.h.ToastError(message)
+	}
+	d.status = SaveStatus{State: Failed, Error: message}
+}
+
+// ExternalUnavailable prevents a pending save from recreating a removed file.
+func (d *Open) ExternalUnavailable(err error) {
+	d.saveGen++
+	d.status = SaveStatus{State: Failed, Error: "File unavailable outside Thesio; your edits are kept here: " + err.Error()}
 }
 
 // Flush writes now if there are unsaved changes; false when that failed, and
 // the changes stay pending for the next save to retry.
 func (d *Open) Flush() bool {
+	if d.buf.Version() != d.seen {
+		d.edited()
+	}
 	d.saveGen++
 	if !d.unsaved {
 		return true
 	}
 	text := d.Text()
+	// Check before every write as notifications can arrive after autosave's timer.
+	current, err := d.h.Store().Load(d.id)
+	if err != nil && (!errors.Is(err, fs.ErrNotExist) || d.diskExists) {
+		d.ExternalUnavailable(err)
+		return false
+	}
+	if err == nil && current != text && (current != d.diskText || !d.diskExists) {
+		d.externalConflict()
+		return false
+	}
 	if err := d.h.Store().Save(d.id, text); err != nil {
 		d.status = SaveStatus{State: Failed, Error: "Could not save: " + err.Error()}
 		return false
 	}
-	d.unsaved = false
-	d.status = SaveStatus{State: Saved}
+	d.MarkSaved()
 	if d.OnSaved != nil {
 		d.OnSaved(d.id, text)
 	}

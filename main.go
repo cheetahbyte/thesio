@@ -61,6 +61,7 @@ func main() {
 			}
 		})
 		win.OnClosed(func() {
+			next.Close()
 			if ws == next {
 				ws = nil
 			}
