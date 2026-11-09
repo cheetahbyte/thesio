@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Run on macOS 13 and later. Release builds needed the macOS version of the machine they were built on (macOS 26 for 0.1.4), so Finder showed Thesio as an app that cannot be opened on macOS 15 and older (#9).
+
 ## 0.1.4
 
 - Keep document previews sharp at their displayed size and pixel density, including pages from other source files. Refresh raster resolution after resizing and retain only visible and nearby page bitmaps within a memory budget. PDF export is unchanged.
