@@ -19,3 +19,12 @@ done
 # One cargo run for all targets, so their crates compile in parallel.
 # shellcheck disable=SC2086 # a flag and a triple per target, no spaces in either
 [ -z "$targets" ] || cargo build --release $targets
+# Rust's prebuilt standard library carries LLVM bitcode into the archive, and Go refuses
+# to link a cgo library that has any. Go checks every archive under the -L directory, so
+# cargo's copies in deps/ are stripped too. llvm-objcopy is the llvm-tools component.
+objcopy="$(rustc --print sysroot)/lib/rustlib/$(rustc -vV | sed -n 's/^host: //p')/bin/llvm-objcopy"
+for target in "$@"; do
+  find "target/$target/release" -name 'libthesio_typst*.a' -exec "$objcopy" \
+    --remove-section __LLVM,__bitcode --remove-section __LLVM,__cmdline \
+    --remove-section .llvmbc --remove-section .llvmcmd {} \;
+done

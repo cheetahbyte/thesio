@@ -17,7 +17,7 @@ With [just](https://github.com/casey/just): `just start`, `just bundle`, `just c
 
 The default vault is `~/Documents/Thesio`. Set `THESIO_HOME` to use another folder, as in `THESIO_HOME=$(mktemp -d) go run .`; `testdata/sample-vault` is a small vault to try.
 
-`scripts/build-typst.sh` builds the library for this machine. For a universal macOS app, build both architectures first. Set the deployment target to `macos.minimumSystemVersion` from `mygo.json`, or the app needs the macOS it was built on whatever its Info.plist says; `just bundle` and the release workflow do this, and `scripts/check-macos-target.sh` checks a built app:
+`scripts/build-typst.sh` builds the library for this machine and strips the LLVM bitcode that Rust's standard library brings into it, which Go refuses to link. Build the library with the script, not with `cargo build` alone. For a universal macOS app, build both architectures first. Set the deployment target to `macos.minimumSystemVersion` from `mygo.json`, or the app needs the macOS it was built on whatever its Info.plist says; `just bundle` and the release workflow do this, and `scripts/check-macos-target.sh` checks a built app:
 
 ```sh
 export MACOSX_DEPLOYMENT_TARGET=$(plutil -extract macos.minimumSystemVersion raw mygo.json)

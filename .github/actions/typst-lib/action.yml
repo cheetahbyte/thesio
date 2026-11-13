@@ -66,14 +66,8 @@ runs:
         cache-on-failure: true
         save-if: ${{ github.ref == 'refs/heads/main' }}
 
-    - name: Build the Typst library
-      if: steps.lib.outputs.cache-hit != 'true'
-      shell: bash
-      env:
-        THESIO_SKIP_BUILT: "1"
-      run: scripts/build-typst.sh ${{ inputs.triples }}
-
     # internal/typst/cgo.go lists these system libraries per OS; compare when a link fails.
+    # Before the build: this writes the library again, and the build strips its bitcode.
     - name: Show the native libraries the Typst library needs
       if: steps.lib.outputs.cache-hit != 'true'
       shell: bash
@@ -82,6 +76,13 @@ runs:
         for target in ${{ inputs.triples }}; do
           cargo rustc --release --target "$target" --lib -- --print native-static-libs 2>&1 | grep native-static-libs
         done
+
+    - name: Build the Typst library
+      if: steps.lib.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        THESIO_SKIP_BUILT: "1"
+      run: scripts/build-typst.sh ${{ inputs.triples }}
 
     - name: Cache the Typst library
       if: steps.lib.outputs.cache-hit != 'true' && github.ref == 'refs/heads/main'
