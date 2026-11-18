@@ -2,8 +2,9 @@
 
 ## Unreleased
 
-## 0.1.6
+## 0.1.7
 
+- Fix Windows release builds with the updated Go toolchain.
 - Build with Go 1.27.4 to include its HTTP security fix.
 - Show or hide the document preview from the toolbar. Hiding it gives the editor the full width; the choice is remembered across documents and restarts.
 - Remove the shared glass capsule around page-bar buttons, leaving plain toolbar icons.

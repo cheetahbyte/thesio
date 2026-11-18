@@ -10,7 +10,7 @@ package typst
 #cgo LDFLAGS: -lthesio_typst
 #cgo darwin LDFLAGS: -liconv
 #cgo linux LDFLAGS: -lgcc_s -lutil -lrt -lpthread -lm -ldl -lc
-#cgo windows LDFLAGS: -lbcrypt -ladvapi32 -lkernel32 -lntdll -luserenv -lws2_32 -ldbghelp -lgcc_eh -l:libpthread.a
+#cgo windows LDFLAGS: -lbcrypt -ladvapi32 -lkernel32 -lntdll -luserenv -lws2_32 -ldbghelp -lgcc_eh -Wl,-Bstatic -lpthread -Wl,-Bdynamic
 #include <stdlib.h>
 #include "thesio_typst.h"
 */
