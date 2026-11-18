@@ -74,7 +74,8 @@ runs:
       working-directory: typst
       run: |
         for target in ${{ inputs.triples }}; do
-          cargo rustc --release --target "$target" --lib -- --print native-static-libs 2>&1 | grep native-static-libs
+          rustup target list --installed | grep -qx "$target" || rustup target add "$target"
+          cargo rustc --release --target "$target" --lib -- --print native-static-libs
         done
 
     - name: Build the Typst library
