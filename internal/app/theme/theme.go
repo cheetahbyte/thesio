@@ -238,10 +238,9 @@ const (
 	BarRadius  = BarControl / 2
 )
 
-// BarGroup holds a bar's buttons on one capsule of glass, as macOS 26's toolbars group theirs.
+// BarGroup holds a bar's buttons side by side.
 func BarGroup(c *ui.Context, buttons func()) ui.Element {
-	return ui.Row(c).Height(BarControl).Shrink(0).AlignItems(ui.Center).Padding(0, 4).Radius(BarRadius).Material(glass.Glass{}).
-		Shadow(0, 0, 0, 1, Ring(c.Theme())).Shadow(0, 1, 4, 0, ui.RGBA(0, 0, 0, 0.08)).Children(buttons)
+	return ui.Row(c).Height(BarControl).Shrink(0).AlignItems(ui.Center).Padding(0, 4).Children(buttons)
 }
 
 // BarButton is a button of a BarGroup showing glyph, named label for the
