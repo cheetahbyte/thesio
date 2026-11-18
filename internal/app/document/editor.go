@@ -98,10 +98,9 @@ func (d *Open) EditorView(c *ui.Context) {
 	}
 }
 
-// View is the editor and the preview side by side, diagnostics under the
-// preview; notes, which have no preview, show the editor alone.
+// View is the editor with an optional preview and diagnostics.
 func (d *Open) View(c *ui.Context) {
-	if !d.withPreview {
+	if !d.withPreview || d.h.Prefs().PreviewHidden {
 		d.EditorView(c)
 		return
 	}

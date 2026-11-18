@@ -136,6 +136,17 @@ func (ws *Workspace) docView(c *ui.Context) {
 		ui.Spacer(c)
 		theme.BarGroup(c, func() {
 			if ws.doc != nil {
+				if vault.IsDocument(ws.doc.ID()) {
+					label := "Hide preview"
+					if ws.prefs.PreviewHidden {
+						label = "Show preview"
+					}
+					if theme.BarButton(c.Key("preview-toggle"), theme.Icons.Panel, label).Clicked() {
+						ws.prefs.PreviewHidden = !ws.prefs.PreviewHidden
+						ws.SavePrefs()
+						ws.after(ws.doc.Focus)
+					}
+				}
 				theme.BarButton(c, theme.Icons.Ellipsis, "More").Menu(ws.docMenu)
 			}
 			ws.searchButton(c)

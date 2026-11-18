@@ -23,6 +23,7 @@ type Preferences struct {
 	LibraryColumns map[string]float32 `json:"library_columns"`
 	// LibraryDetailsHidden keeps the Library's details panel closed.
 	LibraryDetailsHidden bool `json:"library_details_hidden"`
+	PreviewHidden        bool `json:"preview_hidden,omitempty"`
 
 	path string
 	// problem is why the file could not be read; nothing writes to it meanwhile.

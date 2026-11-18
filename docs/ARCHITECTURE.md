@@ -367,7 +367,7 @@ type Open struct{ /* id, main, buffer, editor state, session, preview, save stat
 // withPreview is false for paper notes, which compile for completion and hover only.
 func NewOpen(h host.Host, id, text, main string, withPreview bool) *Open
 func (d *Open) ID() string
-func (d *Open) View(c *ui.Context)        // editor and preview side by side, diagnostics under the preview
+func (d *Open) View(c *ui.Context)        // editor with optional preview and diagnostics
 func (d *Open) EditorView(c *ui.Context)  // the editor alone, for the paper panel
 func (d *Open) Focus()
 func (d *Open) Text() string
@@ -395,6 +395,12 @@ func (d *Open) Close()
 //   NoteLinks func(query string) []editor.Completion                         (the [[ provider)
 //   OnCitationCompleted func()  (a citation was accepted: ensure a bibliography, mark unsaved)
 ```
+
+The document toolbar shows or hides the preview. When hidden, the editor fills the
+content pane. The choice applies to all documents and is saved as `preview_hidden` in
+`.thesio/preferences.json`. Compilation continues for diagnostics and completion.
+Hiding the preview stops scheduling new page renders. The split position is kept
+while the document stays open.
 
 Images dropped on the editor (`DroppedFiles`) or pasted (`OnPaste` with an empty text and
 `mygo.Clipboard.ReadImage`) go through `vault.Store.AddImage` and `InsertFigures`.

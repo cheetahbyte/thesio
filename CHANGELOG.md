@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Show or hide the document preview from the toolbar. Hiding it gives the editor the full width; the choice is remembered across documents and restarts.
 - Remove the shared glass capsule around page-bar buttons, leaving plain toolbar icons.
 - Keep showing a page in the preview while it is drawn again after an edit. The page being written turned white for a moment after every change.
 - Use the fonts installed on the machine in documents. Documents could only use the four families bundled with Typst. A font installed while Thesio runs is available after restarting it.
