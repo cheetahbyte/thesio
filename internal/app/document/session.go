@@ -2,6 +2,7 @@ package document
 
 import (
 	"errors"
+	"slices"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -77,6 +78,7 @@ func (d *Open) compile(wait bool) {
 	for _, p := range s.pages {
 		known[p.hash] = p
 	}
+	shown := slices.Clone(s.pages)
 	go func() {
 		if wait {
 			time.Sleep(debounce)
@@ -97,7 +99,7 @@ func (d *Open) compile(wait bool) {
 		}
 		var pages []page
 		if err == nil && s.render && k.OK {
-			pages = compiledPageInfo(k, path, known)
+			pages = compiledPageInfo(k, path, known, shown)
 		}
 		took := time.Since(started)
 		s.h.Update(func() {
@@ -110,11 +112,16 @@ func (d *Open) compile(wait bool) {
 
 // compiledPageInfo preserves page geometry even before its bitmap is ready.
 // Ownership affects caret following, not the resolution of readable pages.
-func compiledPageInfo(k *typst.Compilation, path string, known map[string]page) []page {
+// A page whose content changed keeps the bitmap shown in its place, under no
+// key so that it is drawn again: without one it would flash white meanwhile.
+func compiledPageInfo(k *typst.Compilation, path string, known map[string]page, shown []page) []page {
 	own := k.PagesFrom(path)
 	pages := make([]page, 0, len(k.Pages))
 	for i, info := range k.Pages {
-		previous := known[info.Hash]
+		previous, same := known[info.Hash]
+		if !same && i < len(shown) {
+			previous = page{bitmap: shown[i].bitmap}
+		}
 		pages = append(pages, page{hash: info.Hash, key: previous.key, bitmap: previous.bitmap,
 			width: info.Width, height: info.Height, own: i >= len(own) || own[i]})
 	}

@@ -125,6 +125,29 @@ func TestPreviewRejectsObsoleteRasterAndReusesUnchangedPage(t *testing.T) {
 	}
 }
 
+// An edited page keeps showing what it had until its new bitmap arrives: a page
+// without a bitmap is drawn white, which flashed on every keystroke.
+func TestPreviewKeepsAnEditedPageUntilItIsDrawnAgain(t *testing.T) {
+	d, h, tt := opened(t, map[string]string{"doc.typ": "#set page(width: 400pt, height: 300pt)\nFirst page.\n#pagebreak()\nSecond page.\n"}, "doc.typ", true)
+	until(t, h, tt, "initial rasters", func() bool { return len(d.s.pages) == 2 && previewPixelsMatch(d, 1) })
+	first, second := d.s.pages[0].bitmap, d.s.pages[1].bitmap
+	published := d.s.published
+	d.SetText("#set page(width: 400pt, height: 300pt)\nFirst page.\n#pagebreak()\nChanged second page.\n", false)
+	for deadline := time.Now().Add(10 * time.Second); d.s.published == published; time.Sleep(time.Millisecond) {
+		if time.Now().After(deadline) {
+			t.Fatal("the edit was never compiled")
+		}
+		h.pump()
+	}
+	if d.s.pages[0].bitmap != first {
+		t.Fatal("the unchanged page lost its bitmap")
+	}
+	if d.s.pages[1].bitmap != second {
+		t.Fatalf("the edited page shows %v between the compile and its new bitmap, want what it had", d.s.pages[1].bitmap)
+	}
+	until(t, h, tt, "edited page's raster", func() bool { return previewPixelsMatch(d, 1) && d.s.pages[1].bitmap != second })
+}
+
 func TestPreviewRasterBudgetAndScrollEviction(t *testing.T) {
 	pages := make([]page, 200)
 	for i := range pages {

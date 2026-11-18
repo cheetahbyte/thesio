@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Remove the shared glass capsule around page-bar buttons, leaving plain toolbar icons.
+- Keep showing a page in the preview while it is drawn again after an edit. The page being written turned white for a moment after every change.
 - Use the fonts installed on the machine in documents. Documents could only use the four families bundled with Typst. A font installed while Thesio runs is available after restarting it.
 - Follow macOS 26's look: dialogs, the search panel and the tag popovers are round panels of glass over a lighter backdrop, push buttons are capsules, and the More, right-click and Type menus are the system's own instead of ones drawn in the window. Confirmations (delete, restore, a failed save) are the system's alert, a sheet on the window. The Library and Sources tables have Finder's 24-point rows, a smaller header, alternating row tints and a rounded selection. The Cite button on Library rows is gone; Cite stays in a row's right-click menu.
 
